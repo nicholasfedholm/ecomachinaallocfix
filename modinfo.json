@@ -1,0 +1,15 @@
+{
+  "type": "code",
+  "modid": "ecomachinaallocfix",
+  "name": "Eco Machina Allocation Fix",
+  "authors": ["Ellimist"],
+  "description": "Compat patch for Eco Machina 0.6.x. Stops the render-only tapered wood mesh append path from reallocating whole mesh pool buffers (Int32[] on the large object heap) on every insertion: pool buffers now grow geometrically and the per-insert custom data placeholder is sized to the inserted mesh instead of the whole pool. Behavior is otherwise unchanged. Client side only.",
+  "version": "1.0.0",
+  "side": "Client",
+  "requiredOnClient": false,
+  "requiredOnServer": false,
+  "dependencies": {
+    "game": "1.22.7",
+    "vsecomachina": "*"
+  }
+}
