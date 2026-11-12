@@ -19,7 +19,6 @@ namespace EcoMachinaAllocFix
 
         Harmony harmony;
         static System.Func<int, int[], int, int> resolveFn;
-        static FieldInfo customAllocFlagField, allocSizeField;
 
         public override bool ShouldLoad(EnumAppSide forSide) => forSide == EnumAppSide.Client;
 
@@ -39,10 +38,6 @@ namespace EcoMachinaAllocFix
                 return;
             }
             resolveFn = (System.Func<int, int[], int, int>)Delegate.CreateDelegate(typeof(System.Func<int, int[], int, int>), resolveElementsPerVertex);
-
-            Type partBase = typeof(CustomMeshDataPartInt).BaseType;
-            customAllocFlagField = AccessTools.Field(partBase, "customAllocationSize");
-            allocSizeField = AccessTools.Field(partBase, "allocationSize");
 
             harmony = new Harmony(HarmonyId);
             int ok = 0;
@@ -169,8 +164,19 @@ namespace EcoMachinaAllocFix
             to.Instanced = from.Instanced;
             to.StaticDraw = from.StaticDraw;
             to.BaseOffset = from.BaseOffset;
-            if (customAllocFlagField != null) customAllocFlagField.SetValue(to, customAllocFlagField.GetValue(from));
-            if (allocSizeField != null) allocSizeField.SetValue(to, allocSizeField.GetValue(from));
+            // EmptyClone also copies the private customAllocationSize/allocationSize pair (they drive AllocationSize).
+            // The fields must be resolved per closed generic type: a FieldInfo from CustomMeshDataPart<int> throws
+            // ArgumentException when applied to a CustomMeshDataPart<float/short/byte>.
+            var f = AllocFields<T>.Flag;
+            if (f != null) f.SetValue(to, f.GetValue(from));
+            var a = AllocFields<T>.Size;
+            if (a != null) a.SetValue(to, a.GetValue(from));
+        }
+
+        static class AllocFields<T>
+        {
+            public static readonly FieldInfo Flag = AccessTools.Field(typeof(CustomMeshDataPart<T>), "customAllocationSize");
+            public static readonly FieldInfo Size = AccessTools.Field(typeof(CustomMeshDataPart<T>), "allocationSize");
         }
     }
 }
